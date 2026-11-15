@@ -16,19 +16,19 @@
   <!-- Summary KPIs -->
   <div class="grid-3">
     <div class="card hero-card">
-      <div class="kpi-label">Money Owed To Us (Receivable)</div>
-      <div class="kpi-value">KES {{ "{:,.0f}".format(stats.receivable) }}</div>
-      <div style="font-size:0.8rem;opacity:0.85;margin-top:6px;">{{ stats.sales_count }} Sales Invoices</div>
+      <div class="kpi-label">Money Received</div>
+      <div class="kpi-value">KES {{ "{:,.0f}".format(stats.collected) }}</div>
+      <div style="font-size:0.8rem;opacity:0.85;margin-top:6px;">Cash &amp; M-Pesa collected</div>
     </div>
     <div class="card">
-      <div class="kpi-label">Cash Collected</div>
-      <div class="kpi-value" style="color:var(--green-text);">KES {{ "{:,.0f}".format(stats.collected) }}</div>
-      <div style="font-size:0.8rem;color:var(--muted);margin-top:6px;">Payments received</div>
+      <div class="kpi-label">Customers Owe Us</div>
+      <div class="kpi-value" style="color:var(--blue);">KES {{ "{:,.0f}".format(stats.receivable) }}</div>
+      <div style="font-size:0.8rem;color:var(--muted);margin-top:6px;">{{ stats.sales_count }} Customer Sales</div>
     </div>
     <div class="card">
-      <div class="kpi-label">Money We Owe (Payable)</div>
+      <div class="kpi-label">We Owe Suppliers</div>
       <div class="kpi-value" style="color:var(--red-text);">KES {{ "{:,.0f}".format(stats.payable) }}</div>
-      <div style="font-size:0.8rem;color:var(--muted);margin-top:6px;">{{ stats.purchase_count }} Purchase Bills</div>
+      <div style="font-size:0.8rem;color:var(--muted);margin-top:6px;">{{ stats.purchase_count }} Supplier Bills</div>
     </div>
   </div>
 
@@ -65,7 +65,7 @@
                     </div>
                   {% endif %}
                 </td>
-                <td><span class="badge badge-{{ r.kind }}">{{ "Sales IN" if r.kind == "sales" else "Bill OUT" }}</span></td>
+                <td><span class="badge badge-{{ r.kind }}">{{ "Money IN" if r.kind == "sales" else "Money OUT" }}</span></td>
                 <td class="num">{{ "{:,.0f}".format(r.total_amount|float) }}</td>
                 <td class="num" style="color:{% if bal > 0 %}var(--red-text){% else %}var(--green-text){% endif %};">
                   {{ "{:,.0f}".format(bal) }}
