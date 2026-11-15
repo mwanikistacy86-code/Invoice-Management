@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="stack">
+  <div class="card">
+    <h3 style="margin-bottom:6px;">Scan Invoice or Receipt (AI OCR)</h3>
+    <p style="color:var(--muted);font-size:0.86rem;margin-bottom:14px;">
+      Upload any company's PDF or photo. AI detects whether it's a Sales or Purchase record, checks math, flags duplicates, and captures custom fields.
+    </p>
+
+    <div class="scan-actions">
+      <label class="dropzone" for="bill-file" style="flex:1;">
+        <div style="font-weight:700;color:var(--blue);font-size:0.95rem;">📄 Upload PDF or Photo</div>
+        <div id="extract-status" style="font-size:0.8rem;color:var(--muted);margin-top:4px;">Receipts, garage bills, WhatsApp images</div>
+        <input id="bill-file" type="file" accept=".pdf,.png,.jpg,.jpeg,.webp" style="display:none;" onchange="extractBill(this)">
+      </label>
+      <button type="button" class="btn btn-primary scan-cam-btn" onclick="openCamera()">
+        📷 Live Scan (Camera)
+      </button>
+    </div>
+
+    <div id="camera-box" class="camera-box">
+      <div class="scanner-frame">
+        <video id="camera-feed" autoplay playsinline muted></video>
+        <div class="scan-line"></div>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:center;margin-top:12px;">
+        <button type="button" class="btn btn-primary" onclick="captureAndScan()">⚡ Capture &amp; Scan</button>
+        <button type="button" class="btn btn-soft" onclick="closeCamera()">Cancel</button>
+      </div>
+    </div>
+
+    <div id="ai-alerts" style="margin-top:12px;"></div>
+
+    <form method="POST" style="margin-top:14px;" onsubmit="serializeExtraFields()">
+      <div class="form-row">
+        <div>
+          <label>Ledger Type</label>
+          <select id="bill-kind" name="kind">
+            <option value="purchase">Purchase Bill (Money OUT)</option>
+            <option value="sales">Sales Invoice / Receipt (Money IN)</option>
+          </select>
+        </div>
+        <div><label>Party / Supplier Name</label><input id="bill-supplier" name="party_name" placeholder="e.g., Ruiru Auto Garage" required></div>
+        <div><label>Total Amount (KES)</label><input id="bill-total" name="total_amount" type="number" step="0.01" placeholder="12000" required></div>
+      </div>
+      <div class="form-row">
+        <div><label>Already Paid (KES)</label><input id="bill-paid" name="paid_amount" type="number" step="0.01" value="0"></div>
+        <div><label>Due Date</label><input id="bill-due" name="due_date" type="date"></div>
+        <div><label>Invoice / Receipt #</label><input id="bill-number" name="invoice_number" placeholder="e.g., RAG-210"></div>
+      </div>
+      <div style="margin-bottom:12px;">
+        <label>Description / Items</label>
+        <input id="bill-desc" name="description" placeholder="e.g., Car repair & parts">
+      </div>
+
+      <div style="margin-bottom:14px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <label style="margin:0;">Adjustable Extra Fields (Company-Specific)</label>
+          <button type="button" class="btn btn-soft btn-sm" onclick="addExtraField()">+ Add Field</button>
+        </div>
+        <div id="extra-fields-list" class="stack" style="gap:8px;"></div>
+      </div>
+
+      <input id="bill-notes" name="ai_notes" type="hidden">
+      <input id="extra-fields-json" name="extra_fields_json" type="hidden" value="{}">
+      <button type="submit" class="btn btn-primary">Confirm &amp; Save to Ledger</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-bottom:12px;">Purchase Bills (Money Going Out)</h3>
+    <div class="stack" style="gap:12px;">
+      {% for b in bills %}
+        {% set bal = b.total_amount|float - b.paid_amount|float %}
+        <div class="item-card">
+          <div style="flex:1;">
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+              <strong>{{ b.party_name }}</strong>
+              <span class="badge badge-{{ b.status }}">{{ b.status }}</span>
+              {% if b.invoice_number %}<span style="font-size:0.78rem;color:var(--muted);">#{{ b.invoice_number }}</span>{% endif %}
+            </div>
+            <div style="font-size:0.86rem;color:var(--muted);margin-top:3px;">{{ b.description }}</div>
+            <div style="font-size:0.84rem;margin-top:6px;">
+              Total: <strong>KES {{ "{:,.0f}".format(b.total_amount|float) }}</strong> ·
+              Remaining: <strong style="color:var(--red-text);">KES {{ "{:,.0f}".format(bal) }}</strong>
+              {% if b.due_date %} · Due: {{ b.due_date }}{% endif %}
+            </div>
+            {% if b.extra_fields %}
+              <div class="tag-row">
+                {% for k, v in b.extra_fields.items() %}<span class="tag-pill">{{ k }}: {{ v }}</span>{% endfor %}
+              </div>
+            {% endif %}
+          </div>
+
+          <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+            {% if bal > 0 %}
+              <form action="{{ url_for('record_payment', invoice_id=b.id) }}" method="POST" data-confirm="Mark bill from {{ b.party_name }} (KES {{ '{:,.0f}'.format(bal) }}) as fully paid?">
+                <input type="hidden" name="amount" value="{{ bal }}">
+                <input type="hidden" name="method" value="M-Pesa">
+                <button class="btn btn-primary btn-sm" type="submit">Mark Paid</button>
+              </form>
+            {% endif %}
+            <form action="{{ url_for('delete_invoice', invoice_id=b.id) }}" method="POST" data-confirm="Delete bill from {{ b.party_name }}? This cannot be undone.">
+              <input type="hidden" name="kind" value="purchase">
+              <button class="btn btn-danger btn-sm" type="submit">Delete</button>
+            </form>
+          </div>
+        </div>
+      {% else %}
+        <p style="color:var(--muted);">No purchase bills recorded yet.</p>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

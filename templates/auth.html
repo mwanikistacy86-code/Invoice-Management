@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="grid-2" style="max-width:820px;margin:20px auto;">
+  <div class="card">
+    <h2 style="margin-bottom:6px;">Log In</h2>
+    <p style="color:var(--muted);font-size:0.88rem;margin-bottom:14px;">Access your business invoice workspace.</p>
+    <form method="POST">
+      <input type="hidden" name="mode" value="login">
+      <div style="margin-bottom:10px;"><label>Email</label><input type="email" name="email" required></div>
+      <div style="margin-bottom:14px;"><label>Password</label><input type="password" name="password" required></div>
+      <button type="submit" class="btn btn-primary" style="width:100%;">Log In</button>
+    </form>
+    <a href="{{ url_for('use_guest') }}" class="btn btn-soft" style="width:100%;margin-top:10px;">Continue as Guest (Rongai Driving School)</a>
+  </div>
+
+  <div class="card">
+    <h2 style="margin-bottom:6px;">Create Business Account</h2>
+    <p style="color:var(--muted);font-size:0.88rem;margin-bottom:14px;">Set up a fresh workspace for your SME.</p>
+    <form method="POST">
+      <input type="hidden" name="mode" value="signup">
+      <div style="margin-bottom:10px;"><label>Business Name</label><input type="text" name="business_name" placeholder="e.g., Kasarani Hair Salon" required></div>
+      <div style="margin-bottom:10px;"><label>Email</label><input type="email" name="email" required></div>
+      <div style="margin-bottom:14px;"><label>Password</label><input type="password" name="password" required></div>
+      <button type="submit" class="btn btn-primary" style="width:100%;">Sign Up</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

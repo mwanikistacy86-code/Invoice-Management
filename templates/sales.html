@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="stack">
+  <div class="card">
+    <h3 style="margin-bottom:6px;">Scan Credit Book Page or Multiple Records (AI)</h3>
+    <p style="color:var(--muted);font-size:0.86rem;margin-bottom:12px;">
+      Snap or upload a whole handwritten book page or list—AI extracts every customer entry so you can review and save all at once.
+    </p>
+    <div class="scan-actions">
+      <label class="dropzone" for="batch-file" style="flex:1;">
+        <div style="font-weight:700;color:var(--blue);font-size:0.95rem;">📄 Upload Book Page / PDF</div>
+        <div id="batch-status" style="font-size:0.8rem;color:var(--muted);margin-top:4px;">Handwritten ledger pages, credit lists, or PDFs</div>
+        <input id="batch-file" type="file" accept=".pdf,.png,.jpg,.jpeg,.webp" style="display:none;" onchange="scanBatchFile(this)">
+      </label>
+      <button type="button" class="btn btn-primary scan-cam-btn" onclick="openCamera('batch')">
+        📷 Live Scan Book (Camera)
+      </button>
+    </div>
+
+    <div id="camera-box" class="camera-box">
+      <div class="scanner-frame">
+        <video id="camera-feed" autoplay playsinline muted></video>
+        <div class="scan-line"></div>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:center;margin-top:12px;">
+        <button type="button" class="btn btn-primary" onclick="captureAndScan()">⚡ Capture &amp; Scan Page</button>
+        <button type="button" class="btn btn-soft" onclick="closeCamera()">Cancel</button>
+      </div>
+    </div>
+
+    <div id="batch-preview" style="display:none;margin-top:14px;">
+      <div class="ledger-wrap">
+        <table class="ledger-table">
+          <thead>
+            <tr>
+              <th>Save</th><th>Type</th><th>Name</th><th>Items / Details</th><th>Total (KES)</th><th>Paid (KES)</th>
+            </tr>
+          </thead>
+          <tbody id="batch-rows"></tbody>
+        </table>
+      </div>
+      <button type="button" class="btn btn-primary" style="margin-top:12px;" onclick="saveBatchRecords()">Save Selected Records</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-bottom:12px;">Create Sales Invoice (Money Coming In)</h3>
+    <form method="POST">
+      <div class="form-row">
+        <div>
+          <label>Customer</label>
+          <div style="display:flex;gap:10px;align-items:center;">
+            <input id="sales-customer" name="party_name" placeholder="e.g., Brian Kamau" required style="min-width:0;flex:1;">
+            <button type="button" class="btn btn-soft btn-sm" onclick="randomCustomer()" title="Generate walk-in customer" style="white-space:nowrap;flex-shrink:0;padding:10px 12px;">🎲 Random</button>
+          </div>
+        </div>
+        <div><label>Amount (KES)</label><input name="total_amount" type="number" step="0.01" placeholder="15000" required></div>
+        <div><label>Due Date</label><input name="due_date" type="date"></div>
+      </div>
+      <div class="form-row">
+        <div><label>Description</label><input name="description" placeholder="e.g., Tea, sugar, or lessons"></div>
+        <div><label>Paid Now (KES)</label><input name="paid_amount" type="number" step="0.01" value="0" placeholder="0 if credit"></div>
+        <div><label>Invoice # (Optional)</label><input name="invoice_number" placeholder="Auto-generated if blank"></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+        <button type="submit" class="btn btn-primary">Save Sale / Invoice</button>
+        <label style="display:inline-flex;align-items:center;gap:6px;margin:0;cursor:pointer;font-size:0.86rem;">
+          <input type="checkbox" name="paid_in_full" value="1" style="width:16px;height:16px;"> Paid in full right now
+        </label>
+      </div>
+    </form>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-bottom:12px;">Sales Invoices</h3>
+    <div class="stack" style="gap:12px;">
+      {% for inv in invoices %}
+        {% set bal = inv.total_amount|float - inv.paid_amount|float %}
+        <div class="item-card">
+          <div style="flex:1;">
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+              <strong>{{ inv.party_name }}</strong>
+              <span class="badge badge-{{ inv.status }}">{{ inv.status }}</span>
+              <span style="font-size:0.78rem;color:var(--muted);">{{ inv.invoice_number }}</span>
+            </div>
+            <div style="font-size:0.86rem;color:var(--muted);margin-top:3px;">{{ inv.description }}</div>
+            <div style="font-size:0.84rem;margin-top:6px;">
+              Total: <strong>KES {{ "{:,.0f}".format(inv.total_amount|float) }}</strong> ·
+              Paid: <strong style="color:var(--green-text);">KES {{ "{:,.0f}".format(inv.paid_amount|float) }}</strong> ·
+              Balance: <strong style="color:var(--red-text);">KES {{ "{:,.0f}".format(bal) }}</strong>
+            </div>
+            {% if inv.extra_fields %}
+              <div class="tag-row">
+                {% for k, v in inv.extra_fields.items() %}<span class="tag-pill">{{ k }}: {{ v }}</span>{% endfor %}
+              </div>
+            {% endif %}
+          </div>
+
+          <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+            {% if bal > 0 %}
+              <form action="{{ url_for('record_payment', invoice_id=inv.id) }}" method="POST" style="display:flex;gap:6px;align-items:center;">
+                <input name="amount" type="number" step="0.01" max="{{ bal }}" placeholder="KES" style="width:95px;padding:7px 9px;" required>
+                <select name="method" style="width:96px;padding:7px 8px;">
+                  <option>M-Pesa</option><option>Cash</option><option>Bank</option>
+                </select>
+                <button class="btn btn-primary btn-sm" type="submit">Record Pay</button>
+              </form>
+              <button class="btn btn-warm btn-sm" type="button" onclick="copyReminder('{{ inv.id }}', this)">Copy Reminder</button>
+            {% endif %}
+            <button
+              type="button"
+              class="btn btn-wa btn-sm"
+              onclick="shareWhatsApp(this)"
+              data-biz="{{ user.business_name }}"
+              data-party="{{ inv.party_name }}"
+              data-ref="{{ inv.invoice_number }}"
+              data-desc="{{ inv.description }}"
+              data-total="{{ '{:,.0f}'.format(inv.total_amount|float) }}"
+              data-paid="{{ '{:,.0f}'.format(inv.paid_amount|float) }}"
+              data-bal="{{ '{:,.0f}'.format(bal) }}"
+              data-due="{{ inv.due_date or '' }}">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91S17.5 2 12.04 2zm5.8 14.08c-.24.68-1.41 1.3-1.95 1.38-.5.07-1.13.1-1.82-.12-.42-.13-.96-.31-1.65-.61-2.91-1.26-4.81-4.18-4.96-4.38-.14-.2-1.18-1.57-1.18-3s.75-2.13 1.01-2.42c.27-.29.58-.36.78-.36h.56c.18 0 .42-.07.66.5.24.58.83 2.02.9 2.17.07.14.12.31.02.5-.1.2-.15.31-.29.48-.14.17-.3.38-.43.51-.14.14-.29.3-.13.59.17.29.75 1.24 1.61 2 1.11.99 2.04 1.3 2.33 1.44.29.14.46.12.63-.07.17-.2.73-.85.92-1.14.2-.29.39-.24.66-.14.27.1 1.7.8 1.99.95.29.14.48.22.55.34.07.12.07.69-.17 1.37z"/></svg>
+              WhatsApp
+            </button>
+            <form action="{{ url_for('delete_invoice', invoice_id=inv.id) }}" method="POST" data-confirm="Delete invoice for {{ inv.party_name }}? This cannot be undone.">
+              <input type="hidden" name="kind" value="sales">
+              <button class="btn btn-danger btn-sm" type="submit">Delete</button>
+            </form>
+          </div>
+        </div>
+      {% else %}
+        <p style="color:var(--muted);">No sales invoices yet.</p>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

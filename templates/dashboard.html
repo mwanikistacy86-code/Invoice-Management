@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="stack">
+  <!-- Top Dashboard Action Bar -->
+  <div class="dash-header">
+    <div>
+      <h2 style="font-size:1.35rem;font-weight:800;">{{ user.business_name }}</h2>
+      <p style="font-size:0.86rem;color:var(--muted);">Track customer receivables and supplier bills in one place.</p>
+    </div>
+    <div class="dash-actions">
+      <a href="{{ url_for('sales') }}" class="btn btn-primary">+ Sales Invoice</a>
+      <a href="{{ url_for('purchases') }}" class="btn btn-warm">+ Upload Bill</a>
+    </div>
+  </div>
+
+  <!-- Summary KPIs -->
+  <div class="grid-3">
+    <div class="card hero-card">
+      <div class="kpi-label">Money Owed To Us (Receivable)</div>
+      <div class="kpi-value">KES {{ "{:,.0f}".format(stats.receivable) }}</div>
+      <div style="font-size:0.8rem;opacity:0.85;margin-top:6px;">{{ stats.sales_count }} Sales Invoices</div>
+    </div>
+    <div class="card">
+      <div class="kpi-label">Cash Collected</div>
+      <div class="kpi-value" style="color:var(--green-text);">KES {{ "{:,.0f}".format(stats.collected) }}</div>
+      <div style="font-size:0.8rem;color:var(--muted);margin-top:6px;">Payments received</div>
+    </div>
+    <div class="card">
+      <div class="kpi-label">Money We Owe (Payable)</div>
+      <div class="kpi-value" style="color:var(--red-text);">KES {{ "{:,.0f}".format(stats.payable) }}</div>
+      <div style="font-size:0.8rem;color:var(--muted);margin-top:6px;">{{ stats.purchase_count }} Purchase Bills</div>
+    </div>
+  </div>
+
+  <!-- Compact Columnar Ledger -->
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+      <h3>Recent Ledger</h3>
+    </div>
+
+    {% if recent %}
+      <div class="ledger-wrap">
+        <table class="ledger-table">
+          <thead>
+            <tr>
+              <th>Ref</th>
+              <th>Party &amp; Details</th>
+              <th>Type</th>
+              <th class="num">Total (KES)</th>
+              <th class="num">Balance (KES)</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in recent %}
+              {% set bal = r.total_amount|float - r.paid_amount|float %}
+              <tr>
+                <td style="font-weight:600;color:var(--muted);">{{ r.invoice_number or "—" }}</td>
+                <td>
+                  <div style="font-weight:700;">{{ r.party_name }}</div>
+                  <div style="font-size:0.78rem;color:var(--muted);">{{ r.description }}</div>
+                  {% if r.extra_fields %}
+                    <div class="tag-row">
+                      {% for k, v in r.extra_fields.items() %}<span class="tag-pill">{{ k }}: {{ v }}</span>{% endfor %}
+                    </div>
+                  {% endif %}
+                </td>
+                <td><span class="badge badge-{{ r.kind }}">{{ "Sales IN" if r.kind == "sales" else "Bill OUT" }}</span></td>
+                <td class="num">{{ "{:,.0f}".format(r.total_amount|float) }}</td>
+                <td class="num" style="color:{% if bal > 0 %}var(--red-text){% else %}var(--green-text){% endif %};">
+                  {{ "{:,.0f}".format(bal) }}
+                </td>
+                <td><span class="badge badge-{{ r.status }}">{{ r.status }}</span></td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p style="color:var(--muted);font-size:0.9rem;">No records yet. Use the buttons above to create a sales invoice or upload a bill.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

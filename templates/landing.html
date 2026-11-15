@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="stack" style="gap:28px;padding-top:12px;">
+  <section class="card landing-hero">
+    <div class="landing-copy">
+      <span class="badge badge-sales" style="margin-bottom:12px;">AI-Powered SME Finance</span>
+      <h1 class="landing-title">
+        <span id="typed-headline">Track every invoice, scan any receipt, know your cashflow.</span><span class="typing-cursor">|</span>
+      </h1>
+      <p class="landing-sub">
+        Built for small businesses: manage customer payments, scan supplier bills with your camera, and ask an AI assistant about your money in plain language.
+      </p>
+    </div>
+    <div class="landing-art">
+      <img src="{{ url_for('static', filename='hero.png') }}" alt="Invoice Management Illustration">
+    </div>
+  </section>
+
+  <section class="grid-3">
+    <div class="card">
+      <div style="font-size:1.5rem;margin-bottom:8px;">📥</div>
+      <h3 style="margin-bottom:6px;">Sales &amp; Partial Payments</h3>
+      <p style="color:var(--muted);font-size:0.88rem;">Create customer invoices, record M-Pesa or cash installments, and copy polite payment reminders in one tap.</p>
+    </div>
+    <div class="card">
+      <div style="font-size:1.5rem;margin-bottom:8px;">📷</div>
+      <h3 style="margin-bottom:6px;">Live Camera &amp; AI OCR</h3>
+      <p style="color:var(--muted);font-size:0.88rem;">Scan receipts or PDFs directly with your camera. AI extracts totals, checks math, flags duplicates, and captures custom fields.</p>
+    </div>
+    <div class="card">
+      <div style="font-size:1.5rem;margin-bottom:8px;">💬</div>
+      <h3 style="margin-bottom:6px;">AI Financial Assistant</h3>
+      <p style="color:var(--muted);font-size:0.88rem;">Ask questions like "Who still owes us?" or "Which supplier bills are unpaid?" and get instant answers from your ledger.</p>
+    </div>
+  </section>
+</div>
+{% endblock %}

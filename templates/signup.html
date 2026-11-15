@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="auth-wrap">
+  <div class="card auth-card">
+    <div class="auth-icon">🏪</div>
+    <h2 style="font-size:1.35rem;font-weight:800;margin-bottom:4px;">Create Business Account</h2>
+    <p style="color:var(--muted);font-size:0.88rem;margin-bottom:18px;">Set up your SME workspace in seconds.</p>
+
+    <form method="POST">
+      <div style="margin-bottom:12px;">
+        <label>Business Name</label>
+        <input type="text" name="business_name" placeholder="e.g., Kasarani Hair Salon" required>
+      </div>
+      <div style="margin-bottom:12px;">
+        <label>Email Address</label>
+        <input type="email" name="email" placeholder="owner@salon.co.ke" required>
+      </div>
+      <div style="margin-bottom:18px;">
+        <label>Password</label>
+        <input type="password" name="password" placeholder="Choose a password" required>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%;">Create Account</button>
+    </form>
+
+    <p style="text-align:center;font-size:0.86rem;color:var(--muted);margin-top:18px;">
+      Already have an account?
+      <a href="{{ url_for('login') }}" style="color:var(--blue);font-weight:700;text-decoration:none;">Log in</a>
+    </p>
+  </div>
+</div>
+{% endblock %}
